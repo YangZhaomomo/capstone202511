@@ -1,0 +1,22 @@
+{
+  "cache_sizes_gb": [256, 400, 512],
+  "policies": [
+    {
+      "id": "e0_lru",
+      "config": "runs/eval_evict/configs/e0_lru.json",
+      "output_dir": "runs/eval_evict/results/e0_lru"
+    },
+    {
+      "id": "e1_dt_slru",
+      "config": "runs/eval_evict/configs/e1_dt_slru.json",
+      "output_dir": "runs/eval_evict/results/e1_dt_slru",
+      "overrides": {}
+    },
+    {
+      "id": "e2_ede",
+      "config": "runs/eval_evict/configs/e2_ede.json",
+      "output_dir": "runs/eval_evict/results/e2_ede",
+      "overrides": {}
+    }
+  ]
+}

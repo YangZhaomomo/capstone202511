@@ -6,3 +6,4 @@
 !.gitignore
 !config.json
 !*/
+!eval_evict/experiment_plan.json

@@ -38,8 +38,8 @@
   "log_evictions": false,
   "log_episodes": false,
   "eviction_policy": "EDE",
-  "ede_alpha": 0.5,
+  "ede_alpha": 0.3,
   "ede_protected_cap": 0.25,
-  "ede_protected_threshold": 1e-06,
-  "ede_default_tti": 7200.0
+  "ede_protected_threshold": 1e-7,
+  "ede_default_tti": 14400.0
 }

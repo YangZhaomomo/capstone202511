@@ -21,7 +21,7 @@ import compress_json
 import matplotlib.pyplot as plt
 
 
-DEFAULT_ALPHAS = [0.1, 0.3, 0.5, 0.7, 0.9]
+DEFAULT_ALPHAS = [0.02, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9]
 BASE_CONFIG = Path("runs/eval_evict/configs/e2_ede.json")
 RESULT_ROOT = Path("runs/eval_evict/results/e2_alpha")
 LOG_ROOT = Path("runs/eval_evict/logs")
@@ -58,10 +58,20 @@ def save_json(payload: dict, path: Path) -> None:
         json.dump(payload, fp, indent=2)
 
 
-def run_simulation(config: dict, alpha: float, size_gb: float, *, log_file: Path) -> Path:
-    label = f"alpha_{alpha:.1f}"
+def find_existing_result(output_dir: Path) -> Path | None:
+    matches = sorted(output_dir.glob("**/*_cache_perf.txt.lzma"))
+    return matches[0] if matches else None
+
+
+def run_simulation(config: dict, alpha: float, size_gb: float, *, log_file: Path, force: bool) -> Path:
+    label = f"alpha_{alpha:.2f}"
     output_dir = RESULT_ROOT / label
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = find_existing_result(output_dir)
+    if existing and not force:
+        print(f"  ↳ result exists, skipping run (use --force to rerun)")
+        return existing
 
     config = dict(config)
     config["ede_alpha"] = alpha
@@ -90,10 +100,10 @@ def run_simulation(config: dict, alpha: float, size_gb: float, *, log_file: Path
 
     tmp_path.unlink(missing_ok=True)
 
-    result_files = sorted(output_dir.glob("**/*_cache_perf.txt.lzma"))
-    if not result_files:
+    result_path = find_existing_result(output_dir)
+    if result_path is None:
         raise FileNotFoundError(f"No result file found in {output_dir}")
-    return result_files[0]
+    return result_path
 
 
 def collect_metrics(result_path: Path, alpha: float, size_gb: float) -> RunRecord:
@@ -154,16 +164,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sweep ede_alpha values for EDE.")
     parser.add_argument("--alphas", type=float, nargs="+", default=DEFAULT_ALPHAS, help="Values of ede_alpha to test.")
     parser.add_argument("--size", type=float, default=400.0, help="Cache size (GB) used in each run.")
+    parser.add_argument("--force", action="store_true", help="Re-run simulations even if results exist.")
     args = parser.parse_args()
 
     base_config = load_json(BASE_CONFIG)
     records: List[RunRecord] = []
 
     for alpha in args.alphas:
-        label = f"alpha_{alpha:.1f}"
+        label = f"alpha_{alpha:.2f}"
         log_file = LOG_ROOT / f"e2_alpha_{label}.log"
         print(f"[Sweep] ede_alpha={alpha:.2f}, log -> {log_file}")
-        result_path = run_simulation(base_config, alpha, args.size, log_file=log_file)
+        result_path = run_simulation(base_config, alpha, args.size, log_file=log_file, force=args.force)
         records.append(collect_metrics(result_path, alpha, args.size))
 
     records.sort(key=lambda r: r.ede_alpha)
